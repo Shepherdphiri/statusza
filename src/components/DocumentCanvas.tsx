@@ -1043,19 +1043,21 @@ export function DocumentCanvas({
         }}
       >
         {/* Security Guilloche Background Pattern Overlay */}
-        <div className="absolute inset-0 pointer-events-none z-0 overflow-hidden opacity-15">
-          <svg className="w-full h-full" xmlns="http://www.w3.org/2000/svg">
-            <defs>
-              <pattern id="guilloche" width="120" height="120" patternUnits="userSpaceOnUse">
-                <path d="M60 0 C 30 30, 30 90, 60 120 C 90 90, 90 30, 60 0 Z" fill="none" stroke="#0284c7" strokeWidth="0.5" />
-                <path d="M0 60 C 30 30, 90 30, 120 60 C 90 90, 30 90, 0 60 Z" fill="none" stroke="#e11d48" strokeWidth="0.5" />
-                <circle cx="60" cy="60" r="45" fill="none" stroke="#0284c7" strokeWidth="0.3" strokeDasharray="2 2" />
-                <circle cx="60" cy="60" r="25" fill="none" stroke="#e11d48" strokeWidth="0.4" />
-              </pattern>
-            </defs>
-            <rect width="100%" height="100%" fill="url(#guilloche)" />
-          </svg>
-        </div>
+        {background.showSecurityPattern && (
+          <div className="absolute inset-0 pointer-events-none z-0 overflow-hidden opacity-15">
+            <svg className="w-full h-full" xmlns="http://www.w3.org/2000/svg">
+              <defs>
+                <pattern id="guilloche" width="120" height="120" patternUnits="userSpaceOnUse">
+                  <path d="M60 0 C 30 30, 30 90, 60 120 C 90 90, 90 30, 60 0 Z" fill="none" stroke="#0284c7" strokeWidth="0.5" />
+                  <path d="M0 60 C 30 30, 90 30, 120 60 C 90 90, 30 90, 0 60 Z" fill="none" stroke="#e11d48" strokeWidth="0.5" />
+                  <circle cx="60" cy="60" r="45" fill="none" stroke="#0284c7" strokeWidth="0.3" strokeDasharray="2 2" />
+                  <circle cx="60" cy="60" r="25" fill="none" stroke="#e11d48" strokeWidth="0.4" />
+                </pattern>
+              </defs>
+              <rect width="100%" height="100%" fill="url(#guilloche)" />
+            </svg>
+          </div>
+        )}
 
         {/* Outer Pink/Magenta Border Frame */}
         {background.showBorderFrame !== false && background.borderWidth > 0 && (

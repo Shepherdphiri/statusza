@@ -55,6 +55,7 @@ export const defaultDocumentState: DocumentState = {
     borderColor: '#d82362', // Deep pink/magenta outline
     borderWidth: 6,
     showBorderFrame: true,
+    showSecurityPattern: false, // Default to disabled so background is clean without Guilloche wave patterns
     paperStyle: 'authentic',
     paperTextureOpacity: 0.15,
     watermarkOpacity: 0.08,

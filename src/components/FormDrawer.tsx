@@ -785,6 +785,21 @@ export function FormDrawer({
                 )}
               </div>
 
+              <div className="pt-1 border-t border-slate-200">
+                <label className="flex items-center justify-between text-slate-700 font-medium cursor-pointer p-1 rounded hover:bg-slate-100">
+                  <div className="flex flex-col">
+                    <span className="font-bold text-slate-800">Security Wave Patterns (Guilloche)</span>
+                    <span className="text-[10px] text-slate-500">Fine intersecting curve lines pattern overlay</span>
+                  </div>
+                  <input
+                    type="checkbox"
+                    checked={state.background.showSecurityPattern === true}
+                    onChange={(e) => updateBackground('showSecurityPattern', e.target.checked)}
+                    className="w-4 h-4 rounded text-indigo-600 focus:ring-indigo-500 cursor-pointer"
+                  />
+                </label>
+              </div>
+
               <div>
                 <div className="flex justify-between text-slate-700 font-medium mb-1">
                   <span>Paper Texture Opacity</span>

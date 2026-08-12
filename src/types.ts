@@ -56,6 +56,7 @@ export interface BackgroundSettings {
   borderColor: string; // "#d82362" (authentic pink frame)
   borderWidth: number; // e.g., 6px
   showBorderFrame?: boolean; // Toggle to enable/disable or completely remove outer frame
+  showSecurityPattern?: boolean; // Security Guilloche wave pattern overlay
   paperStyle: 'authentic' | 'clean-white' | 'aged-vintage' | 'creme-pattern' | 'custom-image';
   paperTextureOpacity: number;
   customBgImageUrl?: string;
