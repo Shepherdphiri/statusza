@@ -1,0 +1,6 @@
+{
+  "name": "RSA Refugee Document BI-1693 Recreator",
+  "description": "High-fidelity recreation tool for RSA BI-1693 Section 24 Refugee Status certificates with form drawer, background customization, drag-and-drop element repositioning, PDF export, and template JSON save/load.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

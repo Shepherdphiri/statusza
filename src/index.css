@@ -1,0 +1,28 @@
+@import "tailwindcss";
+
+/* PDF Export Cleanup Styles */
+.pdf-exporting,
+.pdf-exporting * {
+  box-shadow: none !important;
+  text-shadow: none !important;
+  outline: none !important;
+}
+
+.pdf-exporting .selection-badge,
+.pdf-exporting .pdf-hide,
+.pdf-exporting [class*="cursor-nwse-resize"],
+.pdf-exporting [data-pdf-hide="true"] {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+}
+
+.pdf-exporting [class*="ring-"],
+.pdf-exporting [class*="ring-offset-"] {
+  --tw-ring-color: transparent !important;
+  --tw-ring-offset-color: transparent !important;
+  --tw-ring-shadow: none !important;
+  --tw-shadow: none !important;
+  box-shadow: none !important;
+  background-color: transparent !important;
+}
