@@ -27,6 +27,7 @@ export const defaultDocumentState: DocumentState = {
     sectionHeader: 'REFUGEE RECEPTION OFFICIAL',
     capturedByTitle: 'CAPTURED BY',
     printedByTitle: 'PRINTED BY',
+    fingerprintTitle: 'RIGHT THUMBPRINT / FINGER IMPRESSION',
     capturedByName: 'September, Janice',
     capturedByAppointmentNo: '22748261',
     capturedByDate: '18/04/2012',

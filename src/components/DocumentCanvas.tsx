@@ -1485,15 +1485,17 @@ export function DocumentCanvas({
                   Officials Table
                 </div>
               )}
-              <h4 className="font-extrabold text-[12px] uppercase text-black mb-1">
+              <h4 className="font-extrabold text-[12px] uppercase text-black mb-1 text-left border-b border-black/40 pb-0.5">
                 {officials.sectionHeader || 'REFUGEE RECEPTION OFFICIAL'}
               </h4>
 
-              <div className="grid grid-cols-2 gap-4 text-[11px] font-bold text-black">
+              <div className="grid grid-cols-12 gap-3 text-[11px] font-bold text-black pt-1">
                 {/* Column 1: CAPTURED BY */}
-                <div className="space-y-1 border-r border-black/20 pr-2">
-                  <p className="font-extrabold uppercase">{officials.capturedByTitle || 'CAPTURED BY'}</p>
-                  <div className="grid grid-cols-12">
+                <div className="col-span-5 space-y-1 border-r border-black/20 pr-2">
+                  <div className="font-extrabold uppercase text-[11px] text-black pb-0.5 border-b border-black/20">
+                    {officials.capturedByTitle || 'CAPTURED BY'}
+                  </div>
+                  <div className="grid grid-cols-12 pt-1">
                     <span className="col-span-5 text-[10px] uppercase">NAME:</span>
                     <span className="col-span-7 font-semibold">{officials.capturedByName}</span>
                   </div>
@@ -1528,9 +1530,11 @@ export function DocumentCanvas({
                 </div>
 
                 {/* Column 2: PRINTED BY */}
-                <div className="space-y-1 pl-2">
-                  <p className="font-extrabold uppercase">{officials.printedByTitle || 'PRINTED BY'}</p>
-                  <div className="grid grid-cols-12">
+                <div className="col-span-5 space-y-1 border-r border-black/20 pr-2">
+                  <div className="font-extrabold uppercase text-[11px] text-black pb-0.5 border-b border-black/20">
+                    {officials.printedByTitle || 'PRINTED BY'}
+                  </div>
+                  <div className="grid grid-cols-12 pt-1">
                     <span className="col-span-5 text-[10px] uppercase">NAME:</span>
                     <span className="col-span-7 font-semibold">{officials.printedByName}</span>
                   </div>
@@ -1562,6 +1566,63 @@ export function DocumentCanvas({
                       )}
                     </div>
                   </div>
+                </div>
+
+                {/* Column 3: FINGER IMPRESSION */}
+                <div className="col-span-2 space-y-1 flex flex-col items-center justify-between text-center">
+                  <div className="font-extrabold uppercase text-[9px] text-black pb-0.5 border-b border-black/20 w-full text-center leading-tight">
+                    {officials.fingerprintTitle || 'RIGHT THUMBPRINT / FINGER IMPRESSION'}
+                  </div>
+
+                  <div className="relative group w-full h-28 border border-black/40 border-dashed rounded bg-slate-50/80 flex flex-col items-center justify-center p-1 my-1 overflow-hidden">
+                    {state.fingerprintUrl ? (
+                      <img
+                        src={state.fingerprintUrl}
+                        alt="Fingerprint Impression"
+                        className="w-full h-full object-contain filter contrast-125"
+                      />
+                    ) : (
+                      <div className="flex flex-col items-center justify-center text-slate-400">
+                        <svg viewBox="0 0 100 120" className="w-10 h-12 opacity-50" fill="none">
+                          <ellipse cx="50" cy="60" rx="35" ry="45" stroke="#1e293b" strokeWidth="2" strokeDasharray="3 2" />
+                          <ellipse cx="50" cy="60" rx="28" ry="36" stroke="#1e293b" strokeWidth="2.5" />
+                          <ellipse cx="50" cy="60" rx="20" ry="26" stroke="#1e293b" strokeWidth="2" strokeDasharray="4 2" />
+                          <ellipse cx="50" cy="60" rx="12" ry="16" stroke="#1e293b" strokeWidth="2.5" />
+                          <circle cx="50" cy="60" r="5" fill="#1e293b" />
+                        </svg>
+                        <span className="text-[8px] text-slate-500 font-medium mt-1">Fingerprint</span>
+                      </div>
+                    )}
+
+                    {/* Quick Canvas Upload Overlay */}
+                    {onChangeState && (
+                      <label className="pdf-hide absolute inset-0 bg-indigo-900/75 text-white text-[9px] font-bold flex flex-col items-center justify-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer p-1 text-center" data-pdf-hide="true">
+                        <Upload className="w-4 h-4" />
+                        <span>Upload Fingerprint</span>
+                        <input
+                          type="file"
+                          accept="image/*"
+                          className="hidden"
+                          onChange={(e) => {
+                            const file = e.target.files?.[0];
+                            if (file) {
+                              const reader = new FileReader();
+                              reader.onload = (evt) => {
+                                if (evt.target?.result) {
+                                  onChangeState({ ...state, fingerprintUrl: evt.target.result as string });
+                                }
+                              };
+                              reader.readAsDataURL(file);
+                            }
+                          }}
+                        />
+                      </label>
+                    )}
+                  </div>
+
+                  <span className="text-[8px] text-slate-600 font-bold uppercase tracking-tight">
+                    FINGER IMPRESSION
+                  </span>
                 </div>
               </div>
               {renderResizeGrip('officialsTable')}

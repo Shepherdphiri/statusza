@@ -14,6 +14,7 @@ export interface ReceptionOfficialData {
   sectionHeader?: string; // "REFUGEE RECEPTION OFFICIAL"
   capturedByTitle?: string; // "CAPTURED BY"
   printedByTitle?: string; // "PRINTED BY"
+  fingerprintTitle?: string; // "RIGHT THUMBPRINT / FINGER IMPRESSION"
   capturedByName: string;
   capturedByAppointmentNo: string;
   capturedByDate: string;

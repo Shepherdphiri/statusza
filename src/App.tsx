@@ -115,10 +115,11 @@ export default function App() {
 
   const handleExportPdf = async () => {
     setIsExportingPdf(true);
+    const safeName = (docState.particulars?.nameAndSurname || 'Document').replace(/\s+/g, '_');
     try {
       await exportDocumentToPdf(
         'rsa-document-canvas',
-        `RSA_Refugee_Status_BI-1693_${docState.particulars.nameAndSurname.replace(/\s+/g, '_')}.pdf`
+        `RSA_Refugee_Status_BI-1693_${safeName}.pdf`
       );
       showToast('PDF exported successfully!');
     } catch (err) {
@@ -130,12 +131,13 @@ export default function App() {
   };
 
   const handleExportJson = () => {
+    const safeName = (docState.particulars?.nameAndSurname || 'Document').replace(/\s+/g, '_');
     const dataStr = 'data:text/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(docState, null, 2));
     const downloadAnchor = document.createElement('a');
     downloadAnchor.setAttribute('href', dataStr);
     downloadAnchor.setAttribute(
       'download',
-      `BI-1693_Template_${docState.particulars.nameAndSurname.replace(/\s+/g, '_')}.json`
+      `BI-1693_Template_${safeName}.json`
     );
     document.body.appendChild(downloadAnchor);
     downloadAnchor.click();

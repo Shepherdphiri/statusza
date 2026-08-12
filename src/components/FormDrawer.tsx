@@ -17,6 +17,7 @@ import {
   Trash2,
 } from 'lucide-react';
 import { DocumentState, ElementKey, CustomTextBlock } from '../types';
+import { defaultDocumentState } from '../data/defaultData';
 
 interface FormDrawerProps {
   isOpen: boolean;
@@ -44,35 +45,35 @@ export function FormDrawer({
   const updateParticulars = (field: keyof DocumentState['particulars'], value: string) => {
     onChangeState({
       ...state,
-      particulars: { ...state.particulars, [field]: value },
+      particulars: { ...(defaultDocumentState.particulars), ...(state.particulars || {}), [field]: value },
     });
   };
 
   const updateOfficials = (field: keyof DocumentState['officials'], value: string) => {
     onChangeState({
       ...state,
-      officials: { ...state.officials, [field]: value },
+      officials: { ...(defaultDocumentState.officials), ...(state.officials || {}), [field]: value },
     });
   };
 
   const updateMetadata = (field: keyof DocumentState['metadata'], value: string) => {
     onChangeState({
       ...state,
-      metadata: { ...state.metadata, [field]: value },
+      metadata: { ...(defaultDocumentState.metadata), ...(state.metadata || {}), [field]: value },
     });
   };
 
   const updateStamp = (field: keyof DocumentState['stamp'], value: any) => {
     onChangeState({
       ...state,
-      stamp: { ...state.stamp, [field]: value },
+      stamp: { ...(defaultDocumentState.stamp), ...(state.stamp || {}), [field]: value },
     });
   };
 
   const updateBackground = (field: keyof DocumentState['background'], value: any) => {
     onChangeState({
       ...state,
-      background: { ...state.background, [field]: value },
+      background: { ...(defaultDocumentState.background), ...(state.background || {}), [field]: value },
     });
   };
 
