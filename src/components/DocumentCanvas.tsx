@@ -1571,7 +1571,7 @@ export function DocumentCanvas({
                 {/* Column 3: FINGER IMPRESSION */}
                 <div className="col-span-2 space-y-1 flex flex-col items-center justify-between text-center">
                   <div className="font-extrabold uppercase text-[9px] text-black pb-0.5 border-b border-black/20 w-full text-center leading-tight">
-                    {officials.fingerprintTitle || 'RIGHT THUMBPRINT / FINGER IMPRESSION'}
+                    {officials.fingerprintTitle || 'FINGER IMPRESSION'}
                   </div>
 
                   <div className="relative group w-full h-28 border border-black/40 border-dashed rounded bg-slate-50/80 flex flex-col items-center justify-center p-1 my-1 overflow-hidden">
