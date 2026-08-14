@@ -363,6 +363,9 @@ export function DocumentCanvas({
     const pos = layout[key] || { x: 0, y: 0 };
     const fmt = textFormats?.[key] || {};
     const scaleVal = pos.scale !== undefined ? pos.scale : 1.0;
+    const isStamp = key === 'stampBlock';
+    const isSelected = selectedKey === key && selectedCustomTextId === null;
+    const isDragging = activeDragKey === key;
 
     return {
       transform: `translate(${pos.x}px, ${pos.y}px) scale(${scaleVal})`,
@@ -378,6 +381,8 @@ export function DocumentCanvas({
       textAlign: fmt.textAlign || undefined,
       lineHeight: fmt.lineHeight || undefined,
       letterSpacing: fmt.letterSpacing || undefined,
+      zIndex: isStamp ? (isDragging ? 150 : isSelected ? 120 : 100) : undefined,
+      position: 'relative',
     };
   };
 
@@ -398,6 +403,17 @@ export function DocumentCanvas({
   const getDragWrapperClass = (key: ElementKey) => {
     const isSelected = selectedKey === key && selectedCustomTextId === null;
     const isDragging = activeDragKey === key;
+    const isStamp = key === 'stampBlock';
+
+    if (isStamp) {
+      return `relative cursor-move transition-all rounded ${
+        isDragging
+          ? 'ring-2 ring-amber-500 shadow-2xl z-[150]'
+          : isSelected
+          ? 'ring-2 ring-indigo-500/80 ring-offset-1 z-[120] bg-indigo-500/5 selection-ring'
+          : 'z-[100] hover:ring-1 hover:ring-indigo-400/60 hover:ring-offset-1'
+      }`;
+    }
 
     return `relative cursor-move transition-all rounded ${
       isDragging

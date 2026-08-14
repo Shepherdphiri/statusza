@@ -671,7 +671,9 @@ export function FormDrawer({
                 <div className="p-3 bg-slate-50 border border-slate-200 rounded-lg space-y-2">
                   <div className="text-[11px] font-bold text-slate-700 uppercase tracking-wide flex items-center justify-between">
                     <span>Stamp Live Preview</span>
-                    <span className="text-[10px] text-slate-500 font-normal">Authentic RRO Box</span>
+                    <span className="text-[10px] bg-indigo-100 text-indigo-800 font-semibold px-2 py-0.5 rounded-full border border-indigo-200">
+                      Top Layer (Z-Index 100+)
+                    </span>
                   </div>
                   <div className="py-2 flex justify-center items-center bg-white rounded border border-slate-200 overflow-hidden">
                     <div
