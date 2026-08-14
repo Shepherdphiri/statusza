@@ -15,6 +15,8 @@ import {
   Type,
   Plus,
   Trash2,
+  Stamp,
+  Check,
 } from 'lucide-react';
 import { DocumentState, ElementKey, CustomTextBlock } from '../types';
 import { defaultDocumentState } from '../data/defaultData';
@@ -37,7 +39,7 @@ export function FormDrawer({
   onResetToDefault,
 }: FormDrawerProps) {
   const [activeTab, setActiveTab] = useState<
-    'particulars' | 'officials' | 'media' | 'background' | 'barcodes' | 'layout' | 'customText'
+    'particulars' | 'officials' | 'stamp' | 'media' | 'background' | 'barcodes' | 'layout' | 'customText'
   >('particulars');
 
   if (!isOpen) return null;
@@ -171,6 +173,23 @@ export function FormDrawer({
         >
           <Building2 className="w-4 h-4" />
           Officials & Office
+        </button>
+
+        <button
+          onClick={() => setActiveTab('stamp')}
+          className={`flex items-center gap-1.5 px-4 py-3 border-b-2 whitespace-nowrap transition-colors ${
+            activeTab === 'stamp'
+              ? 'border-indigo-600 text-indigo-600 bg-white font-semibold'
+              : 'border-transparent text-slate-600 hover:text-slate-900'
+          }`}
+        >
+          <Stamp className="w-4 h-4 text-rose-700" />
+          <span>RRO Stamp</span>
+          {state.stamp.showStamp !== false && state.layout?.stampBlock?.visible !== false ? (
+            <span className="w-2 h-2 rounded-full bg-emerald-500 inline-block" title="Stamp Enabled" />
+          ) : (
+            <span className="w-2 h-2 rounded-full bg-slate-300 inline-block" title="Stamp Disabled" />
+          )}
         </button>
 
         <button
@@ -521,95 +540,507 @@ export function FormDrawer({
               </div>
             </div>
 
-            {/* Official Stamp Configuration */}
-            <div className="p-3 bg-purple-50/50 border border-purple-100 rounded-lg space-y-3 text-xs">
-              <div className="flex items-center justify-between font-bold text-purple-900 uppercase">
-                <span>Official Rubber Stamp</span>
+            {/* Fingerprint Impression Header & File */}
+            <div className="p-3 bg-amber-50/50 border border-amber-200/70 rounded-lg space-y-2.5 text-xs">
+              <div className="font-bold text-amber-900 uppercase flex items-center justify-between">
+                <span>Fingerprint Impression</span>
+                {state.fingerprintUrl && (
+                  <button
+                    type="button"
+                    onClick={() => onChangeState({ ...state, fingerprintUrl: undefined })}
+                    className="text-[10px] text-rose-600 hover:text-rose-800 font-bold underline"
+                  >
+                    Clear Fingerprint
+                  </button>
+                )}
+              </div>
+              <div>
+                <label className="block text-slate-700 font-medium mb-0.5">Fingerprint Header Title</label>
+                <input
+                  type="text"
+                  value={state.officials.fingerprintTitle || 'FINGER IMPRESSION'}
+                  onChange={(e) => updateOfficials('fingerprintTitle', e.target.value)}
+                  className="w-full px-2.5 py-1.5 border border-slate-300 rounded-md bg-white font-bold text-amber-900"
+                />
+              </div>
+              <div className="flex gap-2">
+                <label className="flex-1 flex items-center justify-center gap-1.5 py-1.5 bg-white border border-slate-300 hover:bg-slate-50 text-indigo-700 font-semibold rounded cursor-pointer transition-colors text-center">
+                  <Upload className="w-3.5 h-3.5" />
+                  <span>Upload Fingerprint Image</span>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) {
+                        const reader = new FileReader();
+                        reader.onload = (evt) => {
+                          if (evt.target?.result) {
+                            onChangeState({ ...state, fingerprintUrl: evt.target.result as string });
+                          }
+                        };
+                        reader.readAsDataURL(file);
+                      }
+                    }}
+                  />
+                </label>
                 <button
                   type="button"
                   onClick={() =>
+                    onOpenSignatureModal('Fingerprint Image / Impression', (url) =>
+                      onChangeState({ ...state, fingerprintUrl: url })
+                    )
+                  }
+                  className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-800 font-semibold rounded border border-slate-300 transition-colors"
+                >
+                  Draw
+                </button>
+              </div>
+            </div>
+
+          </div>
+        )}
+
+        {/* TAB: STAND-ALONE RRO STAMP SECTION */}
+        {activeTab === 'stamp' && (
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <h3 className="text-sm font-bold text-slate-800 uppercase tracking-wider flex items-center gap-2">
+                <Stamp className="w-4 h-4 text-rose-700" />
+                RRO Official Stamp (Stand-alone Section)
+              </h3>
+            </div>
+
+            {/* Prominent ON / OFF Toggle Switch */}
+            <div className="p-3.5 bg-gradient-to-r from-rose-50 to-purple-50 border border-rose-200 rounded-xl space-y-3 shadow-2xs">
+              <div className="flex items-center justify-between">
+                <div>
+                  <div className="font-bold text-slate-900 text-xs">Document Stamp Visibility</div>
+                  <div className="text-[11px] text-slate-600">
+                    {state.stamp.showStamp !== false && state.layout?.stampBlock?.visible !== false
+                      ? 'The official RRO stamp is active and visible on the document.'
+                      : 'The official RRO stamp is hidden from the sheet and PDF print.'}
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const nextVisible = !(state.stamp.showStamp !== false && state.layout?.stampBlock?.visible !== false);
                     onChangeState({
                       ...state,
+                      stamp: {
+                        ...(defaultDocumentState.stamp),
+                        ...(state.stamp || {}),
+                        showStamp: nextVisible,
+                      },
                       layout: {
                         ...state.layout,
                         stampBlock: {
                           ...(state.layout.stampBlock || { x: 0, y: 0 }),
-                          visible: state.layout.stampBlock?.visible === false ? true : false,
+                          visible: nextVisible,
                         },
                       },
-                    })
-                  }
-                  className={`px-2.5 py-1 rounded text-xs font-semibold transition-colors flex items-center gap-1 ${
-                    state.layout.stampBlock?.visible === false
-                      ? 'bg-rose-600 hover:bg-rose-700 text-white shadow-xs'
-                      : 'bg-emerald-700 hover:bg-emerald-800 text-white shadow-xs'
+                    });
+                  }}
+                  className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all shadow-xs flex items-center gap-1.5 cursor-pointer ${
+                    state.stamp.showStamp !== false && state.layout?.stampBlock?.visible !== false
+                      ? 'bg-emerald-600 hover:bg-emerald-700 text-white'
+                      : 'bg-slate-300 hover:bg-slate-400 text-slate-800'
                   }`}
                 >
-                  {state.layout.stampBlock?.visible === false ? 'Hidden (Click to Restore)' : 'Visible (Click to Remove Stamp)'}
+                  {state.stamp.showStamp !== false && state.layout?.stampBlock?.visible !== false ? (
+                    <>
+                      <Check className="w-3.5 h-3.5" />
+                      <span>Stamp Enabled</span>
+                    </>
+                  ) : (
+                    <>
+                      <X className="w-3.5 h-3.5" />
+                      <span>Stamp Disabled</span>
+                    </>
+                  )}
                 </button>
               </div>
-
-              {state.layout.stampBlock?.visible === false && (
-                <div className="p-2 bg-rose-50 border border-rose-200 rounded text-rose-800 text-[11px] font-medium">
-                  Stamp is currently removed from the document sheet. Click above to restore it anytime.
-                </div>
-              )}
-              <div className="grid grid-cols-2 gap-2">
-                <div>
-                  <label className="block text-slate-700 font-medium mb-0.5">Stamp Office</label>
-                  <input
-                    type="text"
-                    value={state.stamp.officeName}
-                    onChange={(e) => updateStamp('officeName', e.target.value)}
-                    className="w-full px-2.5 py-1.5 border border-slate-300 rounded-md bg-white"
-                  />
-                </div>
-                <div>
-                  <label className="block text-slate-700 font-medium mb-0.5">Stamp Date Text</label>
-                  <input
-                    type="text"
-                    value={state.stamp.dateText}
-                    onChange={(e) => updateStamp('dateText', e.target.value)}
-                    className="w-full px-2.5 py-1.5 border border-slate-300 rounded-md bg-white font-mono"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-slate-700 font-medium mb-0.5">Stamp Color</label>
-                <div className="flex items-center gap-2">
-                  <input
-                    type="color"
-                    value={state.stamp.stampColor}
-                    onChange={(e) => updateStamp('stampColor', e.target.value)}
-                    className="w-8 h-8 rounded border cursor-pointer"
-                  />
-                  <span className="font-mono text-slate-600">{state.stamp.stampColor}</span>
-                </div>
-              </div>
-
-              <div className="flex items-center justify-between pt-1">
-                <label className="flex items-center gap-2 text-slate-700 font-medium cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={state.stamp.hasSlashMark}
-                    onChange={(e) => updateStamp('hasSlashMark', e.target.checked)}
-                    className="rounded text-indigo-600"
-                  />
-                  <span>Include Pen Slash Mark</span>
-                </label>
-
-                <label className="flex items-center gap-2 text-slate-700 font-medium cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={state.stamp.hasFingerprint}
-                    onChange={(e) => updateStamp('hasFingerprint', e.target.checked)}
-                    className="rounded text-indigo-600"
-                  />
-                  <span>Fingerprint Overlay</span>
-                </label>
-              </div>
             </div>
+
+            {/* Configuration Controls (active when stamp is toggled on) */}
+            {state.stamp.showStamp !== false && state.layout?.stampBlock?.visible !== false ? (
+              <div className="space-y-4">
+                {/* Live Preview Card */}
+                <div className="p-3 bg-slate-50 border border-slate-200 rounded-lg space-y-2">
+                  <div className="text-[11px] font-bold text-slate-700 uppercase tracking-wide flex items-center justify-between">
+                    <span>Stamp Live Preview</span>
+                    <span className="text-[10px] text-slate-500 font-normal">Authentic RRO Box</span>
+                  </div>
+                  <div className="py-2 flex justify-center items-center bg-white rounded border border-slate-200 overflow-hidden">
+                    <div
+                      className="relative flex flex-col justify-between text-center select-none shadow-2xs bg-transparent"
+                      style={{
+                        width: `${state.stamp.width || 240}px`,
+                        minHeight: `${state.stamp.minHeight || 135}px`,
+                        border: `${state.stamp.borderWidth ?? 2.5}px solid ${state.stamp.stampColor || '#8B1538'}`,
+                        color: state.stamp.stampColor || '#8B1538',
+                        transform: `rotate(${state.stamp.rotation || 0}deg)`,
+                        opacity: state.stamp.opacity ?? 0.95,
+                      }}
+                    >
+                      {/* Top Header Box */}
+                      <div
+                        className="font-black text-[11px] uppercase tracking-wider py-1 px-1 text-center leading-none"
+                        style={{ borderBottom: `${state.stamp.borderWidth ?? 2.5}px solid ${state.stamp.stampColor || '#8B1538'}` }}
+                      >
+                        {state.stamp.departmentHeader || 'DEPARTMENT OF HOME AFFAIRS'}
+                      </div>
+
+                      {/* Sub-header Box */}
+                      <div className="pt-1 px-1 flex flex-col items-center justify-center">
+                        <div className="font-extrabold text-[10.5px] uppercase tracking-wide leading-tight">
+                          {state.stamp.officeName || 'REFUGEE RECEPTION OFFICES'}
+                        </div>
+                        <div className="font-black text-[11px] uppercase tracking-widest leading-tight">
+                          {state.stamp.officeCity || 'CAPE TOWN'}
+                        </div>
+                      </div>
+
+                      {/* Middle Open Body Area */}
+                      <div className="flex-1 min-h-[35px] flex items-center justify-center px-2 py-1 text-[10px] font-semibold">
+                        {state.stamp.middleText && <span>{state.stamp.middleText}</span>}
+                      </div>
+
+                      {/* Bottom Footer Box */}
+                      <div
+                        className="py-1 px-2.5 flex items-center justify-between font-black text-[10.5px] uppercase tracking-wide leading-none"
+                        style={{ borderTop: `${state.stamp.borderWidth ?? 2.5}px solid ${state.stamp.stampColor || '#8B1538'}` }}
+                      >
+                        <span>{state.stamp.bottomOfficeName || 'CAPE TOWN RRO'}</span>
+                        <span>{state.stamp.bottomOfficeCode || '(66)'}</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Text Content Inputs */}
+                <div className="p-3 bg-white border border-slate-200 rounded-lg space-y-3 text-xs">
+                  <div className="font-bold text-slate-800 uppercase tracking-wide">Text & Labels</div>
+
+                  <div>
+                    <label className="block text-slate-700 font-medium mb-0.5">Top Department Header</label>
+                    <input
+                      type="text"
+                      value={state.stamp.departmentHeader ?? 'DEPARTMENT OF HOME AFFAIRS'}
+                      onChange={(e) => updateStamp('departmentHeader', e.target.value)}
+                      className="w-full px-2.5 py-1.5 border border-slate-300 rounded-md bg-white font-bold"
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <label className="block text-slate-700 font-medium mb-0.5">Offices Sub-header</label>
+                      <input
+                        type="text"
+                        value={state.stamp.officeName ?? 'REFUGEE RECEPTION OFFICES'}
+                        onChange={(e) => updateStamp('officeName', e.target.value)}
+                        className="w-full px-2.5 py-1.5 border border-slate-300 rounded-md bg-white font-semibold"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-slate-700 font-medium mb-0.5">Office City / Branch</label>
+                      <input
+                        type="text"
+                        value={state.stamp.officeCity ?? 'CAPE TOWN'}
+                        onChange={(e) => updateStamp('officeCity', e.target.value)}
+                        className="w-full px-2.5 py-1.5 border border-slate-300 rounded-md bg-white font-semibold"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Office City Drag / Shift Controls */}
+                  <div className="p-2.5 bg-slate-50 border border-slate-200 rounded-md space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="font-bold text-[11px] text-slate-700 uppercase tracking-wide">
+                        Office City / Branch Shift & Drag
+                      </span>
+                      {(state.stamp.cityOffsetX !== 0 || state.stamp.cityOffsetY !== 0 || (state.stamp.cityScale && state.stamp.cityScale !== 1)) && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            onChangeState({
+                              ...state,
+                              stamp: {
+                                ...state.stamp,
+                                cityOffsetX: 0,
+                                cityOffsetY: 0,
+                                cityScale: 1,
+                              },
+                            });
+                          }}
+                          className="text-[10px] text-indigo-600 hover:text-indigo-800 font-semibold underline"
+                        >
+                          Reset Position
+                        </button>
+                      )}
+                    </div>
+                    <p className="text-[10.5px] text-slate-500 leading-tight">
+                      Tip: You can directly <strong>drag</strong> the city text on the live canvas, or adjust the fine-tune shift sliders below.
+                    </p>
+
+                    <div className="grid grid-cols-3 gap-2 pt-1">
+                      <div>
+                        <div className="flex justify-between text-slate-600 text-[10.5px] mb-0.5 font-medium">
+                          <span>Horizontal (X)</span>
+                          <span className="font-mono">{state.stamp.cityOffsetX ?? 0}px</span>
+                        </div>
+                        <input
+                          type="range"
+                          min="-80"
+                          max="80"
+                          step="1"
+                          value={state.stamp.cityOffsetX ?? 0}
+                          onChange={(e) => updateStamp('cityOffsetX', parseInt(e.target.value, 10))}
+                          className="w-full h-1.5 bg-slate-200 rounded-lg appearance-none cursor-pointer"
+                        />
+                      </div>
+
+                      <div>
+                        <div className="flex justify-between text-slate-600 text-[10.5px] mb-0.5 font-medium">
+                          <span>Vertical (Y)</span>
+                          <span className="font-mono">{state.stamp.cityOffsetY ?? 0}px</span>
+                        </div>
+                        <input
+                          type="range"
+                          min="-40"
+                          max="40"
+                          step="1"
+                          value={state.stamp.cityOffsetY ?? 0}
+                          onChange={(e) => updateStamp('cityOffsetY', parseInt(e.target.value, 10))}
+                          className="w-full h-1.5 bg-slate-200 rounded-lg appearance-none cursor-pointer"
+                        />
+                      </div>
+
+                      <div>
+                        <div className="flex justify-between text-slate-600 text-[10.5px] mb-0.5 font-medium">
+                          <span>Scale</span>
+                          <span className="font-mono">{Math.round((state.stamp.cityScale ?? 1.0) * 100)}%</span>
+                        </div>
+                        <input
+                          type="range"
+                          min="0.5"
+                          max="2.0"
+                          step="0.05"
+                          value={state.stamp.cityScale ?? 1.0}
+                          onChange={(e) => updateStamp('cityScale', parseFloat(e.target.value))}
+                          className="w-full h-1.5 bg-slate-200 rounded-lg appearance-none cursor-pointer"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-slate-700 font-medium mb-0.5">Middle Open Content / Date (Optional)</label>
+                    <input
+                      type="text"
+                      placeholder="Leave blank for standard open box or enter date"
+                      value={state.stamp.middleText ?? ''}
+                      onChange={(e) => updateStamp('middleText', e.target.value)}
+                      className="w-full px-2.5 py-1.5 border border-slate-300 rounded-md bg-white font-mono"
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <label className="block text-slate-700 font-medium mb-0.5">Bottom Office Title</label>
+                      <input
+                        type="text"
+                        value={state.stamp.bottomOfficeName ?? 'CAPE TOWN RRO'}
+                        onChange={(e) => updateStamp('bottomOfficeName', e.target.value)}
+                        className="w-full px-2.5 py-1.5 border border-slate-300 rounded-md bg-white font-semibold"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-slate-700 font-medium mb-0.5">Bottom Office Code</label>
+                      <input
+                        type="text"
+                        value={state.stamp.bottomOfficeCode ?? '(66)'}
+                        onChange={(e) => updateStamp('bottomOfficeCode', e.target.value)}
+                        className="w-full px-2.5 py-1.5 border border-slate-300 rounded-md bg-white font-bold"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Color & Ink Styling */}
+                <div className="p-3 bg-white border border-slate-200 rounded-lg space-y-3 text-xs">
+                  <div className="font-bold text-slate-800 uppercase tracking-wide">Stamp Ink & Color Presets</div>
+
+                  <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="color"
+                        value={state.stamp.stampColor || '#8B1538'}
+                        onChange={(e) => updateStamp('stampColor', e.target.value)}
+                        className="w-8 h-8 rounded border cursor-pointer"
+                      />
+                      <span className="font-mono text-slate-700 font-semibold">{state.stamp.stampColor || '#8B1538'}</span>
+                    </div>
+
+                    <div className="flex flex-wrap gap-1.5">
+                      {[
+                        { name: 'Official Maroon', color: '#8B1538' },
+                        { name: 'Classic Burgundy', color: '#7F1D1D' },
+                        { name: 'Royal Purple', color: '#6B21A8' },
+                        { name: 'Deep Navy', color: '#1E3A8A' },
+                        { name: 'Carbon Black', color: '#1E293B' },
+                      ].map((preset) => (
+                        <button
+                          key={preset.color}
+                          type="button"
+                          onClick={() => updateStamp('stampColor', preset.color)}
+                          className={`px-2 py-1 rounded text-[10px] font-semibold border transition-all ${
+                            (state.stamp.stampColor || '#8B1538').toLowerCase() === preset.color.toLowerCase()
+                              ? 'ring-2 ring-indigo-500 border-indigo-500 shadow-2xs font-bold'
+                              : 'border-slate-300 hover:border-slate-400 bg-slate-50'
+                          }`}
+                        >
+                          <span
+                            className="w-2 h-2 rounded-full inline-block mr-1 align-middle"
+                            style={{ backgroundColor: preset.color }}
+                          />
+                          {preset.name}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Dimensions & Adjustments */}
+                <div className="p-3 bg-white border border-slate-200 rounded-lg space-y-3 text-xs">
+                  <div className="font-bold text-slate-800 uppercase tracking-wide">Dimensions & Sliders</div>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <div className="flex justify-between text-slate-700 font-medium mb-1">
+                        <span>Border Thickness</span>
+                        <span className="font-mono">{state.stamp.borderWidth ?? 2.5}px</span>
+                      </div>
+                      <input
+                        type="range"
+                        min="1"
+                        max="5"
+                        step="0.5"
+                        value={state.stamp.borderWidth ?? 2.5}
+                        onChange={(e) => updateStamp('borderWidth', parseFloat(e.target.value))}
+                        className="w-full h-1.5 bg-slate-200 rounded-lg appearance-none cursor-pointer"
+                      />
+                    </div>
+
+                    <div>
+                      <div className="flex justify-between text-slate-700 font-medium mb-1">
+                        <span>Stamp Width</span>
+                        <span className="font-mono">{state.stamp.width ?? 240}px</span>
+                      </div>
+                      <input
+                        type="range"
+                        min="180"
+                        max="320"
+                        step="5"
+                        value={state.stamp.width ?? 240}
+                        onChange={(e) => updateStamp('width', parseInt(e.target.value, 10))}
+                        className="w-full h-1.5 bg-slate-200 rounded-lg appearance-none cursor-pointer"
+                      />
+                    </div>
+
+                    <div>
+                      <div className="flex justify-between text-slate-700 font-medium mb-1">
+                        <span>Rotation Angle</span>
+                        <span className="font-mono">{state.stamp.rotation || 0}°</span>
+                      </div>
+                      <input
+                        type="range"
+                        min="-15"
+                        max="15"
+                        step="0.5"
+                        value={state.stamp.rotation || 0}
+                        onChange={(e) => updateStamp('rotation', parseFloat(e.target.value))}
+                        className="w-full h-1.5 bg-slate-200 rounded-lg appearance-none cursor-pointer"
+                      />
+                    </div>
+
+                    <div>
+                      <div className="flex justify-between text-slate-700 font-medium mb-1">
+                        <span>Ink Opacity</span>
+                        <span className="font-mono">{Math.round((state.stamp.opacity ?? 0.95) * 100)}%</span>
+                      </div>
+                      <input
+                        type="range"
+                        min="0.4"
+                        max="1"
+                        step="0.05"
+                        value={state.stamp.opacity ?? 0.95}
+                        onChange={(e) => updateStamp('opacity', parseFloat(e.target.value))}
+                        className="w-full h-1.5 bg-slate-200 rounded-lg appearance-none cursor-pointer"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Additional Effects */}
+                <div className="p-3 bg-white border border-slate-200 rounded-lg space-y-2 text-xs">
+                  <div className="font-bold text-slate-800 uppercase tracking-wide">Additional Options</div>
+
+                  <div className="flex items-center justify-between pt-1">
+                    <label className="flex items-center gap-2 text-slate-700 font-medium cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={state.stamp.hasSlashMark || false}
+                        onChange={(e) => updateStamp('hasSlashMark', e.target.checked)}
+                        className="rounded text-indigo-600"
+                      />
+                      <span>Include Pen Slash Mark</span>
+                    </label>
+
+                    <label className="flex items-center gap-2 text-slate-700 font-medium cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={state.stamp.hasFingerprint || false}
+                        onChange={(e) => updateStamp('hasFingerprint', e.target.checked)}
+                        className="rounded text-indigo-600"
+                      />
+                      <span>Fingerprint Overlay</span>
+                    </label>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="p-4 bg-slate-50 border border-slate-200 rounded-lg text-center space-y-2">
+                <p className="text-xs text-slate-600 font-medium">
+                  The RRO stamp is currently toggled OFF. It will not be displayed on the canvas or exported in PDFs.
+                </p>
+                <button
+                  type="button"
+                  onClick={() => {
+                    onChangeState({
+                      ...state,
+                      stamp: {
+                        ...(defaultDocumentState.stamp),
+                        ...(state.stamp || {}),
+                        showStamp: true,
+                      },
+                      layout: {
+                        ...state.layout,
+                        stampBlock: {
+                          ...(state.layout.stampBlock || { x: 0, y: 0 }),
+                          visible: true,
+                        },
+                      },
+                    });
+                  }}
+                  className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded text-xs font-semibold shadow-xs"
+                >
+                  Enable Stamp Section
+                </button>
+              </div>
+            )}
           </div>
         )}
 

@@ -66,6 +66,13 @@ export function DocumentCanvas({
   const [activeResizeCustomTextId, setActiveResizeCustomTextId] = useState<string | null>(null);
   const resizeCustomTextStartRef = useRef<{ x: number; y: number; initialScale: number } | null>(null);
 
+  // Stamp City Text Drag & Resize state
+  const [activeDragStampCity, setActiveDragStampCity] = useState(false);
+  const dragStampCityStartRef = useRef<{ x: number; y: number; initialX: number; initialY: number } | null>(null);
+
+  const [activeResizeStampCity, setActiveResizeStampCity] = useState(false);
+  const resizeStampCityStartRef = useRef<{ x: number; y: number; initialScale: number } | null>(null);
+
   const handleResizeMouseDown = (key: ElementKey, e: React.MouseEvent) => {
     e.stopPropagation();
     e.preventDefault();
@@ -151,6 +158,32 @@ export function DocumentCanvas({
     };
   };
 
+  const handleStampCityMouseDown = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setSelectedKey('stampBlock');
+    setSelectedCustomTextId(null);
+    setActiveDragStampCity(true);
+    dragStampCityStartRef.current = {
+      x: e.clientX,
+      y: e.clientY,
+      initialX: state.stamp?.cityOffsetX || 0,
+      initialY: state.stamp?.cityOffsetY || 0,
+    };
+  };
+
+  const handleStampCityResizeMouseDown = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    e.preventDefault();
+    setSelectedKey('stampBlock');
+    setSelectedCustomTextId(null);
+    setActiveResizeStampCity(true);
+    resizeStampCityStartRef.current = {
+      x: e.clientX,
+      y: e.clientY,
+      initialScale: state.stamp?.cityScale || 1.0,
+    };
+  };
+
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
       if (activeResizeKey && resizeStartRef.current && onUpdateElementLayout) {
@@ -181,6 +214,39 @@ export function DocumentCanvas({
         );
         updateCustomText(activeResizeCustomTextId, { scale: newScale });
       }
+
+      if (activeDragStampCity && dragStampCityStartRef.current && onChangeState) {
+        const dx = (e.clientX - dragStampCityStartRef.current.x) / scale;
+        const dy = (e.clientY - dragStampCityStartRef.current.y) / scale;
+        const newX = Math.round(dragStampCityStartRef.current.initialX + dx);
+        const newY = Math.round(dragStampCityStartRef.current.initialY + dy);
+        onChangeState({
+          ...state,
+          stamp: {
+            ...state.stamp,
+            cityOffsetX: newX,
+            cityOffsetY: newY,
+          },
+        });
+      }
+
+      if (activeResizeStampCity && resizeStampCityStartRef.current && onChangeState) {
+        const dx = (e.clientX - resizeStampCityStartRef.current.x) / scale;
+        const dy = (e.clientY - resizeStampCityStartRef.current.y) / scale;
+        const delta = (dx + dy) / 2;
+        const scaleChange = delta / 100;
+        const newScale = Math.max(
+          0.4,
+          Math.min(2.5, Math.round((resizeStampCityStartRef.current.initialScale + scaleChange) * 100) / 100)
+        );
+        onChangeState({
+          ...state,
+          stamp: {
+            ...state.stamp,
+            cityScale: newScale,
+          },
+        });
+      }
     };
 
     const handleMouseUp = () => {
@@ -190,9 +256,19 @@ export function DocumentCanvas({
       dragCustomTextStartRef.current = null;
       setActiveResizeCustomTextId(null);
       resizeCustomTextStartRef.current = null;
+      setActiveDragStampCity(false);
+      dragStampCityStartRef.current = null;
+      setActiveResizeStampCity(false);
+      resizeStampCityStartRef.current = null;
     };
 
-    if (activeResizeKey || activeDragCustomTextId || activeResizeCustomTextId) {
+    if (
+      activeResizeKey ||
+      activeDragCustomTextId ||
+      activeResizeCustomTextId ||
+      activeDragStampCity ||
+      activeResizeStampCity
+    ) {
       window.addEventListener('mousemove', handleMouseMove);
       window.addEventListener('mouseup', handleMouseUp);
     }
@@ -200,7 +276,17 @@ export function DocumentCanvas({
       window.removeEventListener('mousemove', handleMouseMove);
       window.removeEventListener('mouseup', handleMouseUp);
     };
-  }, [activeResizeKey, activeDragCustomTextId, activeResizeCustomTextId, onUpdateElementLayout, scale]);
+  }, [
+    activeResizeKey,
+    activeDragCustomTextId,
+    activeResizeCustomTextId,
+    activeDragStampCity,
+    activeResizeStampCity,
+    onUpdateElementLayout,
+    onChangeState,
+    scale,
+    state,
+  ]);
 
   useEffect(() => {
     setTopBarcodeSvg(generateBarcodeSvg(metadata.topBarcodeValue || 'CTRMW000660412', 28, 1.1, false));
@@ -1399,79 +1485,120 @@ export function DocumentCanvas({
                 {renderResizeGrip('directorGeneral')}
               </div>
 
-              {/* Right: Official Purple/Red Stamp Frame */}
-              <div
-                style={getElementStyle('stampBlock')}
-                onMouseDown={(e) => handleMouseDown('stampBlock', e)}
-                className={`col-span-6 flex flex-col items-end relative ${getDragWrapperClass(
-                  'stampBlock'
-                )}`}
-              >
-                {selectedKey === 'stampBlock' && (
-                  <div className="selection-badge pdf-hide absolute -top-3 right-0 bg-indigo-600 text-white px-1.5 py-0.5 rounded text-[9px] shadow-sm" data-pdf-hide="true">
-                    Official Stamp
-                  </div>
-                )}
-
-                {/* Rectangular Office Stamp */}
+              {/* Right: Stand-alone RRO Rubber Stamp Section (Toggleable On/Off) */}
+              {(stamp.showStamp !== false && state.layout?.stampBlock?.visible !== false) ? (
                 <div
-                  className="relative border-2 p-2 w-[220px] text-center select-none shadow-xs"
-                  style={{
-                    borderColor: stamp.stampColor,
-                    color: stamp.stampColor,
-                    transform: `rotate(${stamp.rotation}deg)`,
-                    opacity: stamp.opacity,
-                  }}
+                  style={getElementStyle('stampBlock')}
+                  onMouseDown={(e) => handleMouseDown('stampBlock', e)}
+                  className={`col-span-6 flex flex-col items-end justify-start relative select-none ${getDragWrapperClass(
+                    'stampBlock'
+                  )}`}
                 >
-                  <div className="font-bold text-[12px] uppercase leading-tight">
-                    {stamp.officeName}
-                  </div>
-                  <div
-                    className="font-extrabold text-[11px] leading-tight border-t border-b py-0.5 my-0.5 whitespace-pre-line"
-                    style={{ borderColor: stamp.stampColor }}
-                  >
-                    {stamp.receptionOfficeText}
-                  </div>
-                  <div className="font-black text-[13px] tracking-wider py-0.5">
-                    {stamp.dateText}
-                  </div>
-                  <div className="font-bold text-[9px] uppercase tracking-tighter">
-                    {stamp.issuingOfficeText}
-                  </div>
-                  <div className="font-bold text-[11px] mt-0.5">
-                    {stamp.locationCodeText}
-                  </div>
-
-                  {/* Diagonal Pen Slash across Stamp */}
-                  {stamp.hasSlashMark && (
-                    <svg
-                      className="absolute inset-0 w-full h-full pointer-events-none"
-                      viewBox="0 0 100 100"
-                      preserveAspectRatio="none"
-                    >
-                      <line x1="15" y1="85" x2="85" y2="15" stroke={stamp.stampColor} strokeWidth="3" opacity="0.8" />
-                    </svg>
-                  )}
-
-                  {/* Fingerprint Impression on right side of stamp */}
-                  {stamp.hasFingerprint && (
-                    <div className="absolute -bottom-6 -right-6 w-20 h-24 pointer-events-none opacity-85">
-                      {state.fingerprintUrl ? (
-                        <img src={state.fingerprintUrl} alt="Fingerprint" className="w-full h-full object-contain" />
-                      ) : (
-                        <svg viewBox="0 0 100 120" className="w-full h-full" fill="none">
-                          <ellipse cx="50" cy="60" rx="35" ry="45" stroke="#1e293b" strokeWidth="2" strokeDasharray="3 2" />
-                          <ellipse cx="50" cy="60" rx="28" ry="36" stroke="#1e293b" strokeWidth="2.5" />
-                          <ellipse cx="50" cy="60" rx="20" ry="26" stroke="#1e293b" strokeWidth="2" strokeDasharray="4 2" />
-                          <ellipse cx="50" cy="60" rx="12" ry="16" stroke="#1e293b" strokeWidth="2.5" />
-                          <circle cx="50" cy="60" r="5" fill="#1e293b" />
-                        </svg>
-                      )}
+                  {selectedKey === 'stampBlock' && (
+                    <div className="selection-badge pdf-hide absolute -top-3 right-0 bg-indigo-600 text-white px-1.5 py-0.5 rounded text-[9px] shadow-sm font-sans" data-pdf-hide="true">
+                      RRO Stamp (Stand-alone)
                     </div>
                   )}
+
+                  {/* Authentic Rectangular RRO Rubber Stamp matching uploaded specification */}
+                  <div
+                    className="relative flex flex-col justify-between text-center select-none shadow-2xs bg-transparent"
+                    style={{
+                      width: stamp.width ? `${stamp.width}px` : '240px',
+                      minHeight: stamp.minHeight ? `${stamp.minHeight}px` : '135px',
+                      border: `${stamp.borderWidth ?? 2.5}px solid ${stamp.stampColor || '#8B1538'}`,
+                      color: stamp.stampColor || '#8B1538',
+                      transform: `rotate(${stamp.rotation || 0}deg)`,
+                      opacity: stamp.opacity ?? 0.95,
+                    }}
+                  >
+                    {/* Top Header Box: DEPARTMENT OF HOME AFFAIRS */}
+                    <div
+                      className="font-black text-[11.5px] uppercase tracking-wider py-1 px-1 text-center leading-none"
+                      style={{ borderBottom: `${stamp.borderWidth ?? 2.5}px solid ${stamp.stampColor || '#8B1538'}` }}
+                    >
+                      {stamp.departmentHeader || 'DEPARTMENT OF HOME AFFAIRS'}
+                    </div>
+
+                    {/* Sub-header Box: REFUGEE RECEPTION OFFICES / CAPE TOWN */}
+                    <div className="pt-1.5 px-1 flex flex-col items-center justify-center relative">
+                      <div className="font-extrabold text-[11px] uppercase tracking-wide leading-tight">
+                        {stamp.officeName || 'REFUGEE RECEPTION OFFICES'}
+                      </div>
+                      
+                      {/* Draggable / Shiftable Office City / Branch Text */}
+                      <div
+                        onMouseDown={handleStampCityMouseDown}
+                        className={`group relative cursor-move inline-flex items-center justify-center font-black text-[11.5px] uppercase tracking-widest leading-tight transition-shadow ${
+                          activeDragStampCity ? 'ring-2 ring-indigo-500 ring-offset-1 rounded-xs' : 'hover:outline-1 hover:outline-dashed hover:outline-indigo-400'
+                        }`}
+                        style={{
+                          transform: `translate(${stamp.cityOffsetX || 0}px, ${stamp.cityOffsetY || 0}px) scale(${stamp.cityScale || 1.0})`,
+                          transformOrigin: 'center center',
+                        }}
+                        title="Click and drag to reposition or shift Office City / Branch text. Use sliders in the RRO Stamp panel to adjust offset precisely."
+                      >
+                        <span>{stamp.officeCity || 'CAPE TOWN'}</span>
+
+                        {/* Visual resize handle on hover */}
+                        <div
+                          onMouseDown={handleStampCityResizeMouseDown}
+                          className="pdf-hide absolute -right-3.5 -bottom-2 w-3.5 h-3.5 bg-indigo-600 rounded-full border border-white opacity-0 group-hover:opacity-100 transition-opacity cursor-nwse-resize shadow-xs flex items-center justify-center"
+                          data-pdf-hide="true"
+                          title="Drag to resize text scale"
+                        >
+                          <div className="w-1 h-1 bg-white rounded-full" />
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Middle Open Body Area */}
+                    <div className="flex-1 min-h-[40px] flex items-center justify-center px-2 py-1 text-[11px] font-semibold">
+                      {stamp.middleText && <span>{stamp.middleText}</span>}
+                    </div>
+
+                    {/* Bottom Footer Box: CAPE TOWN RRO        (66) */}
+                    <div
+                      className="py-1 px-3 flex items-center justify-between font-black text-[11px] uppercase tracking-wide leading-none"
+                      style={{ borderTop: `${stamp.borderWidth ?? 2.5}px solid ${stamp.stampColor || '#8B1538'}` }}
+                    >
+                      <span>{stamp.bottomOfficeName || 'CAPE TOWN RRO'}</span>
+                      <span>{stamp.bottomOfficeCode || '(66)'}</span>
+                    </div>
+
+                    {/* Diagonal Pen Slash across Stamp (optional) */}
+                    {stamp.hasSlashMark && (
+                      <svg
+                        className="absolute inset-0 w-full h-full pointer-events-none"
+                        viewBox="0 0 100 100"
+                        preserveAspectRatio="none"
+                      >
+                        <line x1="10" y1="90" x2="90" y2="10" stroke={stamp.stampColor || '#8B1538'} strokeWidth="2.5" opacity="0.8" />
+                      </svg>
+                    )}
+
+                    {/* Fingerprint Impression Overlay (optional) */}
+                    {stamp.hasFingerprint && (
+                      <div className="absolute -bottom-6 -right-6 w-20 h-24 pointer-events-none opacity-85">
+                        {state.fingerprintUrl ? (
+                          <img src={state.fingerprintUrl} alt="Fingerprint" className="w-full h-full object-contain" />
+                        ) : (
+                          <svg viewBox="0 0 100 120" className="w-full h-full" fill="none">
+                            <ellipse cx="50" cy="60" rx="35" ry="45" stroke="#1e293b" strokeWidth="2" strokeDasharray="3 2" />
+                            <ellipse cx="50" cy="60" rx="28" ry="36" stroke="#1e293b" strokeWidth="2.5" />
+                            <ellipse cx="50" cy="60" rx="20" ry="26" stroke="#1e293b" strokeWidth="2" strokeDasharray="4 2" />
+                            <ellipse cx="50" cy="60" rx="12" ry="16" stroke="#1e293b" strokeWidth="2.5" />
+                            <circle cx="50" cy="60" r="5" fill="#1e293b" />
+                          </svg>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                  {renderResizeGrip('stampBlock')}
                 </div>
-                {renderResizeGrip('stampBlock')}
-              </div>
+              ) : (
+                <div className="col-span-6" />
+              )}
             </div>
 
             {/* REFUGEE RECEPTION OFFICIAL TABLE (NO DIVIDING BORDER LINE ABOVE) */}
@@ -1485,17 +1612,17 @@ export function DocumentCanvas({
                   Officials Table
                 </div>
               )}
-              <h4 className="font-extrabold text-[12px] uppercase text-black mb-1 text-left border-b border-black/40 pb-0.5">
+              <h4 className="font-extrabold text-[12px] uppercase text-black mb-1.5 text-left">
                 {officials.sectionHeader || 'REFUGEE RECEPTION OFFICIAL'}
               </h4>
 
-              <div className="grid grid-cols-12 gap-3 text-[11px] font-bold text-black pt-1">
-                {/* Column 1: CAPTURED BY */}
-                <div className="col-span-5 space-y-1 border-r border-black/20 pr-2">
-                  <div className="font-extrabold uppercase text-[11px] text-black pb-0.5 border-b border-black/20">
+              <div className="grid grid-cols-12 gap-3 text-[11px] font-bold text-black pt-0.5">
+                {/* Column 1: CAPTURED BY (No dividing borders) */}
+                <div className="col-span-5 space-y-1 pr-1">
+                  <div className="font-extrabold uppercase text-[11px] text-black">
                     {officials.capturedByTitle || 'CAPTURED BY'}
                   </div>
-                  <div className="grid grid-cols-12 pt-1">
+                  <div className="grid grid-cols-12 pt-0.5">
                     <span className="col-span-5 text-[10px] uppercase">NAME:</span>
                     <span className="col-span-7 font-semibold">{officials.capturedByName}</span>
                   </div>
@@ -1511,7 +1638,7 @@ export function DocumentCanvas({
                     <span className="col-span-5 text-[10px] uppercase">PLACE:</span>
                     <span className="col-span-7 font-semibold">{officials.capturedByPlace}</span>
                   </div>
-                  <div className="grid grid-cols-12 pt-1">
+                  <div className="grid grid-cols-12 pt-0.5">
                     <span className="col-span-5 text-[10px] uppercase">ORIGINALLY ISSUED IN:</span>
                     <span className="col-span-7 font-semibold">{officials.originallyIssuedIn}</span>
                   </div>
@@ -1529,12 +1656,12 @@ export function DocumentCanvas({
                   </div>
                 </div>
 
-                {/* Column 2: PRINTED BY */}
-                <div className="col-span-5 space-y-1 border-r border-black/20 pr-2">
-                  <div className="font-extrabold uppercase text-[11px] text-black pb-0.5 border-b border-black/20">
+                {/* Column 2: PRINTED BY (No dividing borders) */}
+                <div className="col-span-5 space-y-1 px-1">
+                  <div className="font-extrabold uppercase text-[11px] text-black">
                     {officials.printedByTitle || 'PRINTED BY'}
                   </div>
-                  <div className="grid grid-cols-12 pt-1">
+                  <div className="grid grid-cols-12 pt-0.5">
                     <span className="col-span-5 text-[10px] uppercase">NAME:</span>
                     <span className="col-span-7 font-semibold">{officials.printedByName}</span>
                   </div>
@@ -1550,7 +1677,7 @@ export function DocumentCanvas({
                     <span className="col-span-5 text-[10px] uppercase">PLACE:</span>
                     <span className="col-span-7 font-semibold">{officials.printedByPlace}</span>
                   </div>
-                  <div className="grid grid-cols-12 pt-1">
+                  <div className="grid grid-cols-12 pt-0.5">
                     <span className="col-span-5 text-[10px] uppercase">NUMBER OF EXTENSIONS:</span>
                     <span className="col-span-7 font-semibold">{officials.numberOfExtensions}</span>
                   </div>
@@ -1568,13 +1695,15 @@ export function DocumentCanvas({
                   </div>
                 </div>
 
-                {/* Column 3: FINGER IMPRESSION */}
-                <div className="col-span-2 space-y-1 flex flex-col items-center justify-between text-center">
-                  <div className="font-extrabold uppercase text-[9px] text-black pb-0.5 border-b border-black/20 w-full text-center leading-tight">
-                    {officials.fingerprintTitle || 'FINGER IMPRESSION'}
+                {/* Column 3: FINGER IMPRESSION (Seamless borderless image presentation) */}
+                <div className="col-span-2 space-y-1 flex flex-col items-center justify-start text-center">
+                  <div className="font-extrabold uppercase text-[10px] text-black w-full text-center leading-tight">
+                    {officials.fingerprintTitle && !officials.fingerprintTitle.includes('RIGHT THUMBPRINT')
+                      ? officials.fingerprintTitle
+                      : 'FINGER IMPRESSION'}
                   </div>
 
-                  <div className="relative group w-full h-28 border border-black/40 border-dashed rounded bg-slate-50/80 flex flex-col items-center justify-center p-1 my-1 overflow-hidden">
+                  <div className="relative group w-full h-32 flex flex-col items-center justify-center p-0 my-0 overflow-hidden">
                     {state.fingerprintUrl ? (
                       <img
                         src={state.fingerprintUrl}
@@ -1582,21 +1711,21 @@ export function DocumentCanvas({
                         className="w-full h-full object-contain filter contrast-125"
                       />
                     ) : (
-                      <div className="flex flex-col items-center justify-center text-slate-400">
-                        <svg viewBox="0 0 100 120" className="w-10 h-12 opacity-50" fill="none">
-                          <ellipse cx="50" cy="60" rx="35" ry="45" stroke="#1e293b" strokeWidth="2" strokeDasharray="3 2" />
-                          <ellipse cx="50" cy="60" rx="28" ry="36" stroke="#1e293b" strokeWidth="2.5" />
-                          <ellipse cx="50" cy="60" rx="20" ry="26" stroke="#1e293b" strokeWidth="2" strokeDasharray="4 2" />
-                          <ellipse cx="50" cy="60" rx="12" ry="16" stroke="#1e293b" strokeWidth="2.5" />
-                          <circle cx="50" cy="60" r="5" fill="#1e293b" />
+                      <div className="flex flex-col items-center justify-center text-slate-400 opacity-60">
+                        <svg viewBox="0 0 100 120" className="w-12 h-14" fill="none">
+                          <ellipse cx="50" cy="60" rx="35" ry="45" stroke="#1e293b" strokeWidth="1.5" strokeDasharray="3 2" />
+                          <ellipse cx="50" cy="60" rx="28" ry="36" stroke="#1e293b" strokeWidth="2" />
+                          <ellipse cx="50" cy="60" rx="20" ry="26" stroke="#1e293b" strokeWidth="1.5" strokeDasharray="4 2" />
+                          <ellipse cx="50" cy="60" rx="12" ry="16" stroke="#1e293b" strokeWidth="2" />
+                          <circle cx="50" cy="60" r="4" fill="#1e293b" />
                         </svg>
-                        <span className="text-[8px] text-slate-500 font-medium mt-1">Fingerprint</span>
+                        <span className="text-[8px] text-slate-500 font-medium">Click to upload</span>
                       </div>
                     )}
 
                     {/* Quick Canvas Upload Overlay */}
                     {onChangeState && (
-                      <label className="pdf-hide absolute inset-0 bg-indigo-900/75 text-white text-[9px] font-bold flex flex-col items-center justify-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer p-1 text-center" data-pdf-hide="true">
+                      <label className="pdf-hide absolute inset-0 bg-indigo-900/75 text-white text-[9px] font-bold flex flex-col items-center justify-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer p-1 text-center rounded" data-pdf-hide="true">
                         <Upload className="w-4 h-4" />
                         <span>Upload Fingerprint</span>
                         <input
@@ -1619,10 +1748,6 @@ export function DocumentCanvas({
                       </label>
                     )}
                   </div>
-
-                  <span className="text-[8px] text-slate-600 font-bold uppercase tracking-tight">
-                    FINGER IMPRESSION
-                  </span>
                 </div>
               </div>
               {renderResizeGrip('officialsTable')}

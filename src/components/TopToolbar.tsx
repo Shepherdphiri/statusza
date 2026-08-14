@@ -10,11 +10,13 @@ import {
   ZoomOut,
   Sparkles,
   FileCode,
+  Database,
 } from 'lucide-react';
 
 interface TopToolbarProps {
   onToggleDrawer: () => void;
   isDrawerOpen: boolean;
+  onOpenSqliteModal: () => void;
   onExportPdf: () => void;
   isExportingPdf: boolean;
   onExportJson: () => void;
@@ -30,6 +32,7 @@ interface TopToolbarProps {
 export function TopToolbar({
   onToggleDrawer,
   isDrawerOpen,
+  onOpenSqliteModal,
   onExportPdf,
   isExportingPdf,
   onExportJson,
@@ -124,6 +127,16 @@ export function TopToolbar({
           </div>
 
           <div className="h-5 w-px bg-slate-800 mx-1 hidden sm:block" />
+
+          {/* SQLite Database Manager */}
+          <button
+            onClick={onOpenSqliteModal}
+            className="flex items-center gap-1.5 px-3 py-2 bg-emerald-950/80 hover:bg-emerald-900/90 text-emerald-300 font-semibold rounded-lg border border-emerald-700/60 shadow-xs transition-colors"
+            title="Standalone SQLite Database Storage & Records"
+          >
+            <Database className="w-3.5 h-3.5 text-emerald-400" />
+            <span>SQLite Database</span>
+          </button>
 
           {/* Template JSON Export / Import */}
           <div className="flex items-center gap-1">

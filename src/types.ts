@@ -14,7 +14,7 @@ export interface ReceptionOfficialData {
   sectionHeader?: string; // "REFUGEE RECEPTION OFFICIAL"
   capturedByTitle?: string; // "CAPTURED BY"
   printedByTitle?: string; // "PRINTED BY"
-  fingerprintTitle?: string; // "RIGHT THUMBPRINT / FINGER IMPRESSION"
+  fingerprintTitle?: string; // "FINGER IMPRESSION"
   capturedByName: string;
   capturedByAppointmentNo: string;
   capturedByDate: string;
@@ -29,16 +29,30 @@ export interface ReceptionOfficialData {
 }
 
 export interface StampData {
-  officeName: string;
-  receptionOfficeText: string;
-  issuingOfficeText: string;
-  dateText: string;
-  locationCodeText: string;
-  stampColor: string; // e.g. '#6b21a8' or '#831843'
-  rotation: number; // e.g. -2 degrees
-  opacity: number;
-  hasSlashMark: boolean;
-  hasFingerprint: boolean;
+  showStamp?: boolean; // Stand-alone section toggle
+  departmentHeader?: string; // "DEPARTMENT OF HOME AFFAIRS"
+  officeName: string; // "REFUGEE RECEPTION OFFICES"
+  officeCity?: string; // "CAPE TOWN"
+  cityOffsetX?: number; // X shift in px
+  cityOffsetY?: number; // Y shift in px
+  cityScale?: number; // Optional scale factor
+  middleText?: string; // Optional custom text inside the open stamp area
+  bottomOfficeName?: string; // "CAPE TOWN RRO"
+  bottomOfficeCode?: string; // "(66)"
+  stampColor: string; // e.g. '#8B1538' (authentic deep maroon)
+  borderWidth?: number; // e.g. 2.5
+  rotation: number; // e.g. 0 or -1 degrees
+  opacity: number; // e.g. 0.95
+  width?: number; // e.g. 240
+  minHeight?: number; // e.g. 130
+  hasSlashMark?: boolean;
+  hasFingerprint?: boolean;
+
+  // Legacy compatibility fields
+  receptionOfficeText?: string;
+  issuingOfficeText?: string;
+  dateText?: string;
+  locationCodeText?: string;
 }
 
 export interface DocumentMetadata {

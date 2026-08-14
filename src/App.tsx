@@ -5,6 +5,8 @@ import { DocumentCanvas } from './components/DocumentCanvas';
 import { FormDrawer } from './components/FormDrawer';
 import { TopToolbar } from './components/TopToolbar';
 import { SignatureCanvasModal } from './components/SignatureCanvasModal';
+import { SqliteDatabaseModal } from './components/SqliteDatabaseModal';
+import { saveDocumentToSqlite, getSqliteDb } from './utils/sqliteDb';
 import { exportDocumentToPdf } from './utils/pdfExport';
 import { Info, Sparkles, CheckCircle2, AlertCircle } from 'lucide-react';
 
@@ -13,7 +15,22 @@ export default function App() {
     const saved = localStorage.getItem('rsa_refugee_doc_state');
     if (saved) {
       try {
-        return JSON.parse(saved);
+        const parsed = JSON.parse(saved);
+        if (
+          parsed.officials &&
+          (parsed.officials.fingerprintTitle === 'RIGHT THUMBPRINT / FINGER IMPRESSION' ||
+            !parsed.officials.fingerprintTitle ||
+            parsed.officials.fingerprintTitle.includes('RIGHT THUMBPRINT'))
+        ) {
+          parsed.officials.fingerprintTitle = 'FINGER IMPRESSION';
+        }
+        if (parsed.stamp) {
+          parsed.stamp = {
+            ...defaultDocumentState.stamp,
+            ...parsed.stamp,
+          };
+        }
+        return parsed;
       } catch (e) {
         console.warn('Failed to parse saved state, using default.');
       }
@@ -24,6 +41,7 @@ export default function App() {
   const [isDrawerOpen, setIsDrawerOpen] = useState<boolean>(true);
   const [isDragMode, setIsDragMode] = useState<boolean>(false);
   const [isExportingPdf, setIsExportingPdf] = useState<boolean>(false);
+  const [isSqliteModalOpen, setIsSqliteModalOpen] = useState<boolean>(false);
   const [zoom, setZoom] = useState<number>(0.9);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
@@ -38,9 +56,17 @@ export default function App() {
     onSave: () => {},
   });
 
-  // Save to localStorage on state change
+  // Save to SQLite database and local backup on state change
   useEffect(() => {
-    localStorage.setItem('rsa_refugee_doc_state', JSON.stringify(docState));
+    try {
+      localStorage.setItem('rsa_refugee_doc_state', JSON.stringify(docState));
+    } catch (_) {
+      // If localStorage is full, IndexedDB/SQLite handles the persistence cleanly
+    }
+    // Asynchronously update SQLite database record
+    saveDocumentToSqlite(docState, 'Current Session Active Document', 'current_active').catch((err) => {
+      console.error('Error saving to SQLite database:', err);
+    });
   }, [docState]);
 
   const showToast = (msg: string) => {
@@ -180,6 +206,7 @@ export default function App() {
       <TopToolbar
         onToggleDrawer={() => setIsDrawerOpen(!isDrawerOpen)}
         isDrawerOpen={isDrawerOpen}
+        onOpenSqliteModal={() => setIsSqliteModalOpen(true)}
         onExportPdf={handleExportPdf}
         isExportingPdf={isExportingPdf}
         onExportJson={handleExportJson}
@@ -246,6 +273,15 @@ export default function App() {
         onClose={() => setSignatureModal((prev) => ({ ...prev, isOpen: false }))}
         onSave={signatureModal.onSave}
         title={signatureModal.title}
+      />
+
+      {/* Standalone SQLite Database Storage Manager Modal */}
+      <SqliteDatabaseModal
+        isOpen={isSqliteModalOpen}
+        onClose={() => setIsSqliteModalOpen(false)}
+        currentState={docState}
+        onLoadDocument={(newState) => setDocState(newState)}
+        onShowToast={showToast}
       />
     </div>
   );
