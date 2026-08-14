@@ -1,6 +1,7 @@
 import initSqlJs, { Database } from 'sql.js';
 import sqlWasmUrl from 'sql.js/dist/sql-wasm.wasm?url';
 import { DocumentState } from '../types';
+import { HARDCODED_DEFAULT_TEMPLATE } from '../data/defaultData';
 
 const IDB_NAME = 'rsa_refugee_offline_db';
 const IDB_VERSION = 1;
@@ -123,6 +124,15 @@ export async function getSqliteDb(): Promise<Database> {
           key TEXT PRIMARY KEY,
           value TEXT NOT NULL
         );
+
+        INSERT OR IGNORE INTO documents (id, name, permit_number, holder_name, data_json)
+        VALUES (
+          'template_default_bi1693',
+          'Official BI-1693 Hardcoded Default Template',
+          '200141870',
+          'BICIOUSLUCKSON WILFRED',
+          '${JSON.stringify(HARDCODED_DEFAULT_TEMPLATE).replace(/'/g, "''")}'
+        );
       `);
 
       dbInstance = db;
@@ -143,6 +153,15 @@ export async function getSqliteDb(): Promise<Database> {
           created_at TEXT DEFAULT (datetime('now', 'localtime')),
           updated_at TEXT DEFAULT (datetime('now', 'localtime')),
           data_json TEXT NOT NULL
+        );
+
+        INSERT OR IGNORE INTO documents (id, name, permit_number, holder_name, data_json)
+        VALUES (
+          'template_default_bi1693',
+          'Official BI-1693 Hardcoded Default Template',
+          '200141870',
+          'BICIOUSLUCKSON WILFRED',
+          '${JSON.stringify(HARDCODED_DEFAULT_TEMPLATE).replace(/'/g, "''")}'
         );
       `);
       dbInstance = db;

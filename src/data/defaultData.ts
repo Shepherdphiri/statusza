@@ -1,6 +1,6 @@
 import { DocumentState } from '../types';
 
-export const defaultDocumentState: DocumentState = {
+export const HARDCODED_DEFAULT_TEMPLATE: DocumentState = {
   metadata: {
     formNumber: 'BI-1693',
     topBarcodeValue: 'CTRMW000660412',
@@ -107,3 +107,9 @@ export const defaultDocumentState: DocumentState = {
   },
   customTexts: [],
 };
+
+export const defaultDocumentState: DocumentState = JSON.parse(JSON.stringify(HARDCODED_DEFAULT_TEMPLATE));
+
+export function getFreshDefaultDocumentState(): DocumentState {
+  return JSON.parse(JSON.stringify(HARDCODED_DEFAULT_TEMPLATE));
+}

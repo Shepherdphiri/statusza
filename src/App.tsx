@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { DocumentState, ElementKey, ElementPosition } from './types';
-import { defaultDocumentState } from './data/defaultData';
+import { defaultDocumentState, getFreshDefaultDocumentState } from './data/defaultData';
 import { DocumentCanvas } from './components/DocumentCanvas';
 import { FormDrawer } from './components/FormDrawer';
 import { TopToolbar } from './components/TopToolbar';
@@ -125,17 +125,25 @@ export default function App() {
   };
 
   const handleResetLayout = () => {
+    const fresh = getFreshDefaultDocumentState();
     setDocState((prev) => ({
       ...prev,
-      layout: defaultDocumentState.layout,
+      layout: fresh.layout,
+      stamp: {
+        ...prev.stamp,
+        cityOffsetX: 0,
+        cityOffsetY: 0,
+        cityScale: 1,
+      },
     }));
-    showToast('Layout element positions reset to default.');
+    showToast('Layout element positions reset to hardcoded default template.');
   };
 
   const handleResetToDefault = () => {
-    if (window.confirm('Reset all form fields and styling back to original sample document?')) {
-      setDocState(defaultDocumentState);
-      showToast('Document reset to original sample entries.');
+    if (window.confirm('Reset all form fields, stamp, and layout back to the hardcoded default template?')) {
+      const fresh = getFreshDefaultDocumentState();
+      setDocState(fresh);
+      showToast('Document reset to hardcoded default template.');
     }
   };
 
